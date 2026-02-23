@@ -1,2 +1,739 @@
-Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2026-02-23 12:16:15
-Current User's Login: oo2718773-commits
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JMP - عرض الطلبات والحسابات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #06b6d4;
+            --primary-dark: #0891b2;
+            --background: #f8fafc;
+            --foreground: #1a2332;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --muted-fg: #64748b;
+            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.08);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), #764ba2);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .logo-text {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--foreground);
+        }
+
+        .logo-text span {
+            background: linear-gradient(135deg, var(--primary), #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .badge {
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card.total {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        }
+
+        .stat-card.company {
+            background: linear-gradient(135deg, #34d399, #10b981);
+        }
+
+        .stat-card.courier {
+            background: linear-gradient(135deg, #fb923c, #f97316);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+            pointer-events: none;
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            color: white;
+            font-size: 2.2rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-detail {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding-top: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        /* Animation للكروت */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .stat-card.courier {
+            animation: pulse 2s infinite;
+        }
+
+        /* Search and Filter */
+        .controls {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted-fg);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 3rem 1rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 15px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 0.5rem 1.2rem;
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            background: white;
+            color: var(--muted-fg);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .filter-tab:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .filter-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Orders Grid */
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* Order Card - View Only */
+        .order-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+        }
+
+        .order-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .order-header {
+            padding: 1rem 1.5rem;
+            background: linear-gradient(to left, #f8fafc, #ffffff);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .status-badge {
+            padding: 0.4rem 1rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-pending { background: rgba(245, 158, 11, 0.1); color: #92400e; }
+        .status-in-delivery { background: rgba(59, 130, 246, 0.1); color: #1e40af; }
+        .status-delivered { background: rgba(16, 185, 129, 0.1); color: #065f46; }
+        .status-returned { background: rgba(239, 68, 68, 0.1); color: #7f1d1d; }
+        .status-returned-shipping { background: rgba(139, 92, 246, 0.1); color: #5b21b6; }
+        .status-postponed { background: rgba(249, 115, 22, 0.1); color: #9a3412; }
+        .status-canceled { background: rgba(156, 163, 175, 0.1); color: #4b5563; }
+
+        .order-body {
+            padding: 1.5rem;
+        }
+
+        .sub-status {
+            background: rgba(6, 182, 212, 0.1);
+            border-right: 4px solid var(--primary);
+            padding: 0.75rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .sub-status.partial { border-right-color: #f59e0b; }
+        .sub-status.refund { border-right-color: #ef4444; }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .info-label {
+            color: var(--muted-fg);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: var(--foreground);
+        }
+
+        .phone-numbers {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .phone-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #f1f5f9;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-size: 0.9rem;
+        }
+
+        .phone-item span {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .whatsapp-link {
+            color: #25D366;
+            text-decoration: none;
+            font-size: 1.2rem;
+        }
+
+        .order-footer {
+            padding: 1rem 1.5rem;
+            background: #f8fafc;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .price {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .price.positive { color: #10b981; }
+        .price.negative { color: #ef4444; }
+
+        .date {
+            color: var(--muted-fg);
+            font-size: 0.85rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem;
+            background: white;
+            border-radius: 20px;
+            grid-column: 1 / -1;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 2rem;
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .orders-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="logo">
+                    <div class="logo-icon">JMP</div>
+                    <div class="logo-text">Order <span>Manager</span></div>
+                </div>
+                <div class="badge">
+                    <span>⏺️ وضع العرض فقط - Read Only</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid" id="statsCards">
+            <div class="stat-card total">
+                <div class="stat-icon">💰</div>
+                <div class="stat-label">الحساب الإجمالي</div>
+                <div class="stat-value" id="totalAmount">0 ج.م</div>
+                <div class="stat-detail" id="totalDetails">إجمالي الطلبات: 0</div>
+            </div>
+            
+            <div class="stat-card company">
+                <div class="stat-icon">🏢</div>
+                <div class="stat-label">حساب الشركة</div>
+                <div class="stat-value" id="companyAmount">0 ج.م</div>
+                <div class="stat-detail" id="companyDetails">صافي الربح: 0 ج.م</div>
+            </div>
+            
+            <div class="stat-card courier">
+                <div class="stat-icon">🚚</div>
+                <div class="stat-label">حساب المندوب</div>
+                <div class="stat-value" id="courierAmount">0 ج.م</div>
+                <div class="stat-detail" id="courierDetails">عدد الطلبات: 0</div>
+            </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="controls">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" id="searchInput" placeholder="ابحث عن طلب أو عميل أو رقم هاتف...">
+            </div>
+            
+            <div class="filter-tabs" id="filterTabs">
+                <button class="filter-tab active" data-filter="all">الكل</button>
+                <button class="filter-tab" data-filter="pending">قيد الانتظار</button>
+                <button class="filter-tab" data-filter="in-delivery">قيد التوصيل</button>
+                <button class="filter-tab" data-filter="delivered">تم التسليم</button>
+                <button class="filter-tab" data-filter="returned-shipping">مرتجع+شحن</button>
+                <button class="filter-tab" data-filter="returned">مرتجع</button>
+                <button class="filter-tab" data-filter="postponed">مؤجل</button>
+                <button class="filter-tab" data-filter="canceled">ملغي</button>
+            </div>
+        </div>
+
+        <!-- Orders Grid -->
+        <div class="orders-grid" id="ordersGrid"></div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            JMP Order Management System | عرض فقط - الإصدار 2.0
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // Load data from localStorage
+            function loadData() {
+                const orders = JSON.parse(localStorage.getItem('jmp_orders') || '[]');
+                const metadata = JSON.parse(localStorage.getItem('jmp_state_metadata') || '{"archive":[],"specialArchive":[]}');
+                return { orders, archive: metadata.archive || [], specialArchive: metadata.specialArchive || [] };
+            }
+
+            // Format currency
+            function formatCurrency(amount) {
+                return new Intl.NumberFormat('ar-EG', { 
+                    style: 'currency', 
+                    currency: 'EGP',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(amount).replace('ج.م.‏', 'ج.م');
+            }
+
+            // Get WhatsApp URL
+            function getWhatsAppUrl(phone) {
+                const cleaned = phone.replace(/\D/g, '');
+                let formatted = cleaned;
+                if (cleaned.startsWith('01')) {
+                    formatted = '20' + cleaned.substring(1);
+                }
+                return `https://wa.me/${formatted}`;
+            }
+
+            // Get status label
+            function getStatusLabel(status) {
+                const labels = {
+                    'pending': 'قيد الانتظار',
+                    'in-delivery': 'قيد التوصيل',
+                    'delivered': 'تم التسليم',
+                    'returned': 'مرتجع',
+                    'returned-shipping': 'مرتجع + شحن',
+                    'postponed': 'شحن مؤجل',
+                    'canceled': 'ملغي'
+                };
+                return labels[status] || status;
+            }
+
+            // Calculate statistics
+            function calculateStats(orders) {
+                const COURIER_COMMISSION = 40;
+                let totalRevenue = 0;
+                let totalCompanyShare = 0;
+                let totalCourierCommission = 0;
+                let deliveredCount = 0;
+                let returnedShippingCount = 0;
+
+                orders.forEach(order => {
+                    if (order.status === 'delivered') {
+                        deliveredCount++;
+                        
+                        if (order.subStatus === 'partial' && order.partialAmount) {
+                            // تسليم جزئي
+                            totalRevenue += order.partialAmount;
+                            totalCompanyShare += order.partialAmount - COURIER_COMMISSION;
+                            totalCourierCommission += COURIER_COMMISSION;
+                        } else if (order.subStatus === 'refund' && order.refundAmount) {
+                            // جلب مرتجع
+                            const netAmount = order.price - order.refundAmount;
+                            totalRevenue += netAmount;
+                            totalCompanyShare += netAmount - COURIER_COMMISSION;
+                            totalCourierCommission += COURIER_COMMISSION;
+                        } else {
+                            // تسليم ناجح
+                            totalRevenue += order.price;
+                            totalCompanyShare += order.price - COURIER_COMMISSION;
+                            totalCourierCommission += COURIER_COMMISSION;
+                        }
+                    } else if (order.status === 'returned-shipping') {
+                        returnedShippingCount++;
+                        const paidAmount = order.paidAmount || 0;
+                        
+                        if (paidAmount > 0) {
+                            totalRevenue += paidAmount;
+                            totalCompanyShare += paidAmount - COURIER_COMMISSION;
+                            totalCourierCommission += COURIER_COMMISSION;
+                        } else {
+                            totalCompanyShare -= COURIER_COMMISSION;
+                            totalCourierCommission += COURIER_COMMISSION;
+                        }
+                    }
+                });
+
+                return {
+                    totalRevenue,
+                    totalCompanyShare,
+                    totalCourierCommission,
+                    deliveredCount,
+                    returnedShippingCount
+                };
+            }
+
+            // Update stats cards
+            function updateStats(orders) {
+                const stats = calculateStats(orders);
+                const totalOrders = stats.deliveredCount + stats.returnedShippingCount;
+
+                document.getElementById('totalAmount').textContent = formatCurrency(stats.totalRevenue);
+                document.getElementById('totalDetails').textContent = `إجمالي الطلبات: ${totalOrders} (تسليم: ${stats.deliveredCount} | مرتجع+شحن: ${stats.returnedShippingCount})`;
+
+                document.getElementById('companyAmount').textContent = formatCurrency(stats.totalCompanyShare);
+                document.getElementById('companyDetails').textContent = `صافي الربح بعد خصم ${stats.totalCourierCommission} ج.م عمولات`;
+
+                document.getElementById('courierAmount').textContent = formatCurrency(stats.totalCourierCommission);
+                document.getElementById('courierDetails').textContent = `عدد الطلبات: ${totalOrders} × 40 ج.م`;
+            }
+
+            // Render orders
+            function renderOrders(orders, filter = 'all', searchQuery = '') {
+                let filtered = orders;
+
+                if (filter !== 'all') {
+                    filtered = filtered.filter(o => o.status === filter);
+                }
+
+                if (searchQuery) {
+                    const query = searchQuery.toLowerCase();
+                    filtered = filtered.filter(o => 
+                        (o.orderNumber || '').toLowerCase().includes(query) ||
+                        (o.clientName || '').toLowerCase().includes(query) ||
+                        (o.phone1 || '').toLowerCase().includes(query) ||
+                        (o.phone2 || '').toLowerCase().includes(query) ||
+                        (o.address || '').toLowerCase().includes(query)
+                    );
+                }
+
+                // Sort by date (newest first)
+                filtered.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+                const grid = document.getElementById('ordersGrid');
+
+                if (filtered.length === 0) {
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">📭</div>
+                            <h3>لا توجد طلبات</h3>
+                            <p style="color: var(--muted-fg); margin-top: 0.5rem;">لا توجد طلبات تطابق معايير البحث</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                grid.innerHTML = filtered.map(order => {
+                    // Generate sub-status HTML if exists
+                    let subStatusHtml = '';
+                    if (order.subStatus === 'partial' && order.partialAmount) {
+                        subStatusHtml = `
+                            <div class="sub-status partial">
+                                <strong>تسليم جزئي</strong><br>
+                                <small>${order.partialReason || ''} - المدفوع: ${formatCurrency(order.partialAmount)}</small>
+                            </div>
+                        `;
+                    } else if (order.subStatus === 'refund' && order.refundAmount) {
+                        subStatusHtml = `
+                            <div class="sub-status refund">
+                                <strong>جلب مرتجع</strong><br>
+                                <small>المبلغ المسترد للعميل: ${formatCurrency(order.refundAmount)}</small>
+                            </div>
+                        `;
+                    }
+
+                    // Generate phone HTML
+                    const phoneHtml = `
+                        <div class="phone-numbers">
+                            <div class="phone-item">
+                                <span>📞</span>
+                                <span>${order.phone1}</span>
+                                <a href="${getWhatsAppUrl(order.phone1)}" target="_blank" class="whatsapp-link">📱</a>
+                            </div>
+                            ${order.phone2 ? `
+                                <div class="phone-item">
+                                    <span>📞</span>
+                                    <span>${order.phone2}</span>
+                                    <a href="${getWhatsAppUrl(order.phone2)}" target="_blank" class="whatsapp-link">📱</a>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+
+                    return `
+                        <div class="order-card">
+                            <div class="order-header">
+                                <span class="order-id">${order.orderNumber || 'بدون رقم'}</span>
+                                <span class="status-badge status-${order.status}">${getStatusLabel(order.status)}</span>
+                            </div>
+                            <div class="order-body">
+                                ${subStatusHtml}
+                                
+                                <div class="info-row">
+                                    <span class="info-label">العميل</span>
+                                    <span class="info-value">${order.clientName || 'غير محدد'}</span>
+                                </div>
+                                
+                                <div class="info-row">
+                                    <span class="info-label">الشركة</span>
+                                    <span class="info-value">${order.sender || 'غير محدد'}</span>
+                                </div>
+                                
+                                <div class="info-row">
+                                    <span class="info-label">العنوان</span>
+                                    <span class="info-value">${order.address || 'غير محدد'}</span>
+                                </div>
+                                
+                                ${phoneHtml}
+                                
+                                ${order.notes ? `
+                                    <div style="margin-top: 0.75rem; padding: 0.5rem; background: #f1f5f9; border-radius: 8px; font-size: 0.9rem;">
+                                        <strong>ملاحظات:</strong> ${order.notes}
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="order-footer">
+                                <span class="price ${order.price >= 0 ? 'positive' : 'negative'}">
+                                    ${formatCurrency(order.price)}
+                                </span>
+                                <span class="date">
+                                    ${order.createdAt ? new Date(order.createdAt).toLocaleDateString('ar-EG') : ''}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Main function
+            function init() {
+                const { orders } = loadData();
+                
+                // Update stats
+                updateStats(orders);
+                
+                // Initial render
+                renderOrders(orders);
+
+                // Search functionality
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    const activeFilter = document.querySelector('.filter-tab.active')?.dataset.filter || 'all';
+                    renderOrders(orders, activeFilter, e.target.value);
+                });
+
+                // Filter tabs
+                document.querySelectorAll('.filter-tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        // Update active tab
+                        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        
+                        // Render with filter
+                        const filter = tab.dataset.filter;
+                        const searchQuery = document.getElementById('searchInput').value;
+                        renderOrders(orders, filter, searchQuery);
+                    });
+                });
+            }
+
+            // Auto-refresh every 30 seconds
+            init();
+            setInterval(init, 30000);
+        })();
+    </script>
+</body>
+</html>
